@@ -1,0 +1,29 @@
+services:
+  train:
+    build: .
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./keis7-main:/app/keis7-main:ro
+    command: ["src.train"]
+
+  predict:
+    build: .
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./keis7-main:/app/keis7-main:ro
+    command: ["src.predict"]
+    depends_on:
+      - train
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.9.2
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./artifacts/mlruns:/mlflow/mlruns
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri /mlflow/mlruns
+      --default-artifact-root /mlflow/mlruns
