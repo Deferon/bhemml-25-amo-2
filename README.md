@@ -128,7 +128,11 @@ flowchart LR
 - Усиленная диагностика при износе **> 150 мин**.
 - Переход к **предиктивному обслуживанию** на исторических данных.
 
-**Графики EDA:** `reference-material/keis7-research/analysis_results_20251206_154833/` — `failure_distribution.png`, `efficiency_vs_wear_scatter.png`, `trend_efficiency_vs_wear.png`.
+**Графики EDA:**
+
+| Распределение отказов | КПД vs износ | Тренд КПД |
+|-----------------------|--------------|-----------|
+| ![Распределение отказов](reference-material/keis7-research/analysis_results_20251206_154833/failure_distribution.png) | ![КПД vs износ](reference-material/keis7-research/analysis_results_20251206_154833/efficiency_vs_wear_scatter.png) | ![Тренд КПД](reference-material/keis7-research/analysis_results_20251206_154833/trend_efficiency_vs_wear.png) |
 
 ---
 
@@ -194,7 +198,7 @@ flowchart LR
 | air_mass | 9,97 |
 | Tool wear [min] | 9,87 |
 
-График: `artifacts/plots/feature_importance.png`
+![Важность признаков](docs/images/feature_importance.png)
 
 ---
 
@@ -252,13 +256,20 @@ flowchart LR
 
 ### 5.9. Графики и отчёты
 
+**Модель CatBoost (пайплайн):**
+
+| Confusion Matrix | ROC Curve | Feature Importance |
+|------------------|-----------|-------------------|
+| ![Confusion matrix](docs/images/confusion_matrix.png) | ![ROC curve](docs/images/roc_curve.png) | ![Feature importance](docs/images/feature_importance.png) |
+
+> Актуальные версии после каждого обучения также сохраняются в `artifacts/plots/` и MLflow UI.
+
+**Дополнительно:**
+
 | Артефакт | Описание |
 |----------|----------|
-| `artifacts/plots/confusion_matrix.png` | Матрица ошибок |
-| `artifacts/plots/roc_curve.png` | ROC-кривая |
-| `artifacts/plots/feature_importance.png` | Важность признаков |
 | MLflow UI | Эксперимент `machine_failure_prediction`, runs с метриками и артефактами |
-| `reference-material/keis7-research/analysis_results_20251206_154833/` | EDA-графики и `analysis_summary.txt` |
+| `reference-material/keis7-research/analysis_results_20251206_154833/analysis_summary.txt` | Текстовый отчёт EDA |
 
 ---
 
