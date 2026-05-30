@@ -20,12 +20,12 @@ from src.config import (
     ARTIFACTS_DIR,
     CATBOOST_PARAMS,
     CAT_FEATURES,
-    MLFLOW_TRACKING_URI,
     RANDOM_STATE,
     SMOKE_SAMPLE_SIZE,
     TARGET_COL,
     TRAIN_TEST_SIZE,
 )
+from src.mlflow_setup import setup_mlflow
 from src.etl.features import build_features, get_feature_matrix
 from src.etl.load import load_train
 from src.monitoring import (
@@ -44,12 +44,7 @@ def train_model(
     plots_dir = output_dir / "plots"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    (output_dir / "mlruns").mkdir(parents=True, exist_ok=True)
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    experiment = mlflow.get_experiment_by_name("machine_failure_prediction")
-    if experiment is None:
-        mlflow.create_experiment("machine_failure_prediction")
-    mlflow.set_experiment("machine_failure_prediction")
+    setup_mlflow()
 
     df = load_train()
     if sample_size:

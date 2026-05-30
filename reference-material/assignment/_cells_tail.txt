@@ -1,0 +1,331 @@
+total cells 66
+--- cell 51 markdown len 42 ---
+## └эрышч яю Єшярь юсюЁєфютрэш  (L, M, H)
+
+
+--- cell 52 code len 2011 ---
+# └эрышч юЄърчют яю Єшярь юсюЁєфютрэш 
+print("=== └═└╦╚╟ ╬╥╩└╟╬┬ ╧╬ ╥╚╧└╠ ╬┴╬╨╙─╬┬└═╚▀ ===\n")
+
+for equipment_type in df['Type'].unique():
+    type_data = df[df['Type'] == equipment_type]
+    total = len(type_data)
+    failures = type_data['Machine failure'].sum()
+    failure_rate = (failures / total) * 100
+
+    print(f"╥шя {equipment_type}:")
+    print(f"  ┬ёхую чряшёхщ: {total:,}")
+    print(f"  ╬Єърчют: {failures:,}")
+    print(f"  ╧ЁюЎхэЄ юЄърчют: {failure_rate:.2f}%")
+    print()
+
+# ┬шчєрышчрЎш 
+fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+
+# 1. ╨рёяЁхфхыхэшх юЄърчют яю Єшярь
+failure_by_type = df.groupby('Type')['Machine failure'].agg(['sum', 'count'])
+failure_by_type['rate'] = (failure_by_type['sum'] / failure_by_type['count']) * 100
+
+axes[0].bar(failure_by_type.index, failure_by_type['sum'],
+            color=['lightblue', 'lightgreen', 'lightcoral'],
+            edgecolor='black', alpha=0.8)
+axes[0].set_title('╩юышўхёЄтю юЄърчют яю Єшярь юсюЁєфютрэш ',
+                  fontsize=14, fontweight='bold')
+axes[0].set_xlabel('╥шя юсюЁєфютрэш ')
+axes[0].set_ylabel('╩юышўхёЄтю юЄърчют')
+axes[0].grid(True, alpha=0.3, axis='y')
+
+# ─юсрты хь яюфяшёш
+for i, (idx, row) in enumerate(failure_by_type.iterrows()):
+    axes[0].text(i, row['sum'] + 10, f"{int(row['sum'])}",
+                 ha='center', va='bottom', fontweight='bold')
+
+# 2. ╧ЁюЎхэЄ юЄърчют яю Єшярь
+axes[1].bar(failure_by_type.index, failure_by_type['rate'],
+            color=['lightblue', 'lightgreen', 'lightcoral'],
+            edgecolor='black', alpha=0.8)
+axes[1].set_title('╧ЁюЎхэЄ юЄърчют яю Єшярь юсюЁєфютрэш ',
+                  fontsize=14, fontweight='bold')
+axes[1].set_xlabel('╥шя юсюЁєфютрэш ')
+axes[1].set_ylabel('╧ЁюЎхэЄ юЄърчют (%)')
+axes[1].grid(True, alpha=0.3, axis='y')
+
+# ─юсрты хь яюфяшёш
+for i, (idx, row) in enumerate(failure_by_type.iterrows()):
+    axes[1].text(i, row['rate'] + 0.05, f"{row['rate']:.2f}%",
+                 ha='center', va='bottom', fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+
+
+--- cell 53 markdown len 327 ---
+- ╥шя L фюьшэшЁєхЄ т т√сюЁъх, яю¤Єюьє фр╕Є ш ьръёшьєь рсёюы■Єэ√ї юЄърчют, эю юЄэюёшЄхы№э√щ Ёшёъ тё╕ Ёртэю т√°х, ўхь є M/H.
+- ╥шя√ M ш H яюърч√тр■Є ёїюцє■ ўрёЄюЄє (~1.3Ц1.4%), ўЄю уютюЁшЄ ю ёЄрсшы№эющ ЁрсюЄх сюыхх лЄ ц╕ы√ї╗ ьюфхыхщ.
+- ─ы  ьюфхыш ёЄюшЄ срырэёшЁютрЄ№ т√сюЁъє яю Єшярь, шэрўх яЁюуэюч сєфхЄ ёьх∙╕э т ёЄюЁюэє Єшяр L.
+
+--- cell 54 markdown len 63 ---
+## └эрышч тчршьюёт чхщ ярЁрьхЄЁют ё ъюэъЁхЄэ√ьш Єшярьш юЄърчют
+
+
+--- cell 55 code len 2733 ---
+# └эрышч ярЁрьхЄЁют фы  ърцфюую Єшяр юЄърчр
+failure_types = ['TWF', 'HDF', 'PWF', 'OSF', 'RNF']
+failure_names = {
+    'TWF': 'Tool Wear Failure',
+    'HDF': 'Heat Dissipation Failure',
+    'PWF': 'Power Failure',
+    'OSF': 'Overstrain Failure',
+    'RNF': 'Random Failures'
+}
+
+print("=== ╤╥└╥╚╤╥╚╩└ ╧└╨└╠┼╥╨╬┬ ╧╬ ╥╚╧└╠ ╬╥╩└╟╬┬ ===\n")
+
+for failure_type in failure_types:
+    if failure_type == 'RNF':
+        continue  # ╧Ёюяєёърхь RNF шч-чр ьрыюую ъюышўхёЄтр
+
+    failure_data = df[df[failure_type] == 1]
+    normal_data = df[df[failure_type] == 0]
+
+    print(f"\n{failure_names[failure_type]} ({failure_type}):")
+    print(f"  ╩юышўхёЄтю ёыєўрхт: {len(failure_data)}")
+
+    for param in ['Torque [Nm]', 'Tool wear [min]', 'Air temperature [K]',
+                  'Process temperature [K]', 'Rotational speed [rpm]']:
+        failure_median = failure_data[param].median()
+        normal_median = normal_data[param].median()
+        diff = failure_median - normal_median
+        diff_pct = (diff / normal_median) * 100
+
+        print(f"  {param}:")
+        print(f"    ╧Ёш юЄърчх: {failure_median:.2f}")
+        print(f"    ┬ эюЁьх: {normal_median:.2f}")
+        print(f"    ╨рчэшЎр: {diff:.2f} ({diff_pct:+.1f}%)")
+
+# ┬шчєрышчрЎш : ёЁхфэшх чэрўхэш  ярЁрьхЄЁют фы  ърцфюую Єшяр юЄърчр
+fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+axes = axes.flatten()
+
+for idx, param in enumerate(['Torque [Nm]', 'Tool wear [min]', 'Air temperature [K]',
+                            'Process temperature [K]', 'Rotational speed [rpm]']):
+    failure_means = []
+    failure_labels = []
+
+    for failure_type in ['TWF', 'HDF', 'PWF', 'OSF']:
+        failure_data = df[df[failure_type] == 1]
+        if len(failure_data) > 0:
+            failure_means.append(failure_data[param].mean())
+            failure_labels.append(failure_type)
+
+    if failure_means:
+        bars = axes[idx].bar(failure_labels, failure_means,
+                            color=['lightcoral', 'lightblue', 'lightgreen', 'orange'],
+                            edgecolor='black', alpha=0.8)
+        axes[idx].axhline(y=df[param].mean(), color='red', linestyle='--',
+                         label='╬с∙хх ёЁхфэхх', linewidth=2)
+        axes[idx].set_title(f'╤Ёхфэхх чэрўхэшх {param}\nяю Єшярь юЄърчют',
+                           fontsize=12, fontweight='bold')
+        axes[idx].set_ylabel('╟эрўхэшх')
+        axes[idx].legend()
+        axes[idx].grid(True, alpha=0.3, axis='y')
+
+        # ╧юфяшёш эр ёЄюысЎрї
+        for bar in bars:
+            height = bar.get_height()
+            axes[idx].text(bar.get_x() + bar.get_width()/2., height,
+                          f'{height:.1f}', ha='center', va='bottom', fontsize=9)
+
+fig.delaxes(axes[5])
+plt.tight_layout()
+plt.show()
+
+
+--- cell 56 markdown len 389 ---
+- `TWF` ш `OSF` Ёрчтштр■Єё  яЁш ¤ъёЄЁхьры№эюь шчэюёх шэёЄЁєьхэЄр, яю¤Єюьє ъюэЄЁюы№ ЁхёєЁёр шэёЄЁєьхэЄр ъЁшЄшўхэ.
+- `HDF` ш `PWF` ёюяЁютюцфр■Єё  Ёхчъшь ЁюёЄюь ъЁєЄ ∙хую ьюьхэЄр яЁш юфэютЁхьхээю ёэшцхээющ ёъюЁюёЄш тЁр∙хэш  Ч шэфшърЄюЁ яхЁхуЁхтр/яхЁхуЁєчъш.
+- ╥хьяхЁрЄєЁр юЄышўрхЄё  єьхЁхээю, чрЄю ъюьсшэрЎш  т√ёюъюую ьюьхэЄр ш эшчъющ ёъюЁюёЄш їюЁю°ю юЄфхы хЄ яЁюсыхьэ√х Ёхцшь√ ¤ъёяыєрЄрЎшш.
+
+
+--- cell 57 code len 2812 ---
+# ╬яЁхфхыхэшх яюЁюуют√ї чэрўхэшщ фы  ъы■ўхт√ї ярЁрьхЄЁют
+print("=== ╧╬╨╬├╬┬█┼ ╟═└╫┼═╚▀ ─╦▀ ╧╨┼─╤╩└╟└═╚▀ ╬╥╩└╟╬┬ ===\n")
+
+# └эрышч ътрэЄшыхщ яЁш юЄърчрї
+key_params = ['Torque [Nm]', 'Tool wear [min]', 'Air temperature [K]',
+              'Process temperature [K]']
+
+failure_data = df[df['Machine failure'] == 1]
+normal_data = df[df['Machine failure'] == 0]
+
+for param in key_params:
+    print(f"\n{param}:")
+
+    # ╤ЄрЄшёЄшър фы  эюЁьры№э√ї фрээ√ї
+    normal_q25 = normal_data[param].quantile(0.25)
+    normal_q75 = normal_data[param].quantile(0.75)
+    normal_median = normal_data[param].median()
+
+    # ╤ЄрЄшёЄшър фы  фрээ√ї ё юЄърчрьш
+    failure_q25 = failure_data[param].quantile(0.25)
+    failure_q75 = failure_data[param].quantile(0.75)
+    failure_median = failure_data[param].median()
+
+    print(f"  ═юЁьры№э√х чэрўхэш :")
+    print(f"    25%: {normal_q25:.2f}, ╠хфшрэр: {normal_median:.2f}, 75%: {normal_q75:.2f}")
+    print(f"  ╧Ёш юЄърчрї:")
+    print(f"    25%: {failure_q25:.2f}, ╠хфшрэр: {failure_median:.2f}, 75%: {failure_q75:.2f}")
+
+    # ╧Ёхфырурхь√щ яюЁюу (75-щ яхЁЎхэЄшы№ эюЁьры№э√ї чэрўхэшщ)
+    threshold = normal_data[param].quantile(0.75)
+    failure_rate_above_threshold = (failure_data[param] > threshold).sum() / len(failure_data) * 100
+    normal_rate_above_threshold = (normal_data[param] > threshold).sum() / len(normal_data) * 100
+
+    print(f"  ╧Ёхфырурхь√щ яюЁюу (75% эюЁьры№э√ї): {threshold:.2f}")
+    print(f"    ╧ЁюЎхэЄ юЄърчют т√°х яюЁюур: {failure_rate_above_threshold:.1f}%")
+    print(f"    ╧ЁюЎхэЄ эюЁьры№э√ї т√°х яюЁюур: {normal_rate_above_threshold:.1f}%")
+
+# ┬шчєрышчрЎш  ЁрёяЁхфхыхэшщ ё яюЁюуют√ьш чэрўхэш ьш
+fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+axes = axes.flatten()
+
+for idx, param in enumerate(key_params[:4]):
+    ax = axes[idx]
+
+    # ├шёЄюуЁрьь√
+    ax.hist(normal_data[param], bins=50, alpha=0.6, label='═юЁьр',
+           color='lightblue', density=True)
+    ax.hist(failure_data[param], bins=50, alpha=0.6, label='╬Єърч',
+           color='lightcoral', density=True)
+
+    # ┬хЁЄшъры№э√х ышэшш фы  ьхфшрэ
+    ax.axvline(normal_data[param].median(), color='blue', linestyle='--',
+              linewidth=2, label=f'╠хфшрэр эюЁьр: {normal_data[param].median():.1f}')
+    ax.axvline(failure_data[param].median(), color='red', linestyle='--',
+              linewidth=2, label=f'╠хфшрэр юЄърч: {failure_data[param].median():.1f}')
+
+    # ╧юЁюуютюх чэрўхэшх
+    threshold = normal_data[param].quantile(0.75)
+    ax.axvline(threshold, color='green', linestyle=':', linewidth=2,
+              label=f'╧юЁюу (75%): {threshold:.1f}')
+
+    ax.set_title(f'╨рёяЁхфхыхэшх {param}', fontsize=12, fontweight='bold')
+    ax.set_xlabel('╟эрўхэшх')
+    ax.set_ylabel('╧ыюЄэюёЄ№')
+    ax.legend(fontsize=9)
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+
+--- cell 58 markdown len 372 ---
+- ╧юЁюу 46 ═╖ь яю ъЁєЄ ∙хьє ьюьхэЄє яюъЁ√трхЄ ~73% тёхї юЄърчют, яЁш ¤Єюь ыюцэ√ї ёЁрсрЄ√трэшщ ёЁхфш эюЁьры№э√ї чряшёхщ ~25%.
+- ╚чэюё т√°х 160 ьшэєЄ яюўЄш тфтюх єтхышўштрхЄ тхЁю ЄэюёЄ№ юЄърчр: яюыютшэр юЄърчют ыхцшЄ чр ¤Єющ уЁрэшЎхщ.
+- ╥хьяхЁрЄєЁэ√х яюЁюуш ьхэхх ъюэЄЁрёЄэ√, эю ЁюёЄ т√°х 301 K (тючфєї) ш 311 K (яЁюЎхёё) єёшыштрхЄ Ёшёъ яхЁхуЁхтр ш ъюьсшэшЁєхЄё  ё HDF/OSF.
+
+
+--- cell 59 markdown len 60 ---
+## ╩юЁЁхы Ўшюээ√щ рэрышч ьхцфє ярЁрьхЄЁрьш ш Єшярьш юЄърчют
+
+
+--- cell 60 code len 1304 ---
+# ╩юЁЁхы Ўшш ьхцфє ярЁрьхЄЁрьш ш ъюэъЁхЄэ√ьш Єшярьш юЄърчют
+failure_types = ['TWF', 'HDF', 'PWF', 'OSF']
+param_cols = ['Air temperature [K]', 'Process temperature [K]',
+              'Rotational speed [rpm]', 'Torque [Nm]', 'Tool wear [min]']
+
+# ╤ючфрхь ьрЄЁшЎє ъюЁЁхы Ўшщ
+corr_data = df[param_cols + failure_types]
+correlation_matrix = corr_data.corr()
+
+# ╚чтыхърхь ъюЁЁхы Ўшш ьхцфє ярЁрьхЄЁрьш ш Єшярьш юЄърчют
+failure_correlations = correlation_matrix.loc[param_cols, failure_types]
+
+print("=== ╩╬╨╨┼╦▀╓╚╚ ╧└╨└╠┼╥╨╬┬ ╤ ╥╚╧└╠╚ ╬╥╩└╟╬┬ ===\n")
+print(failure_correlations.round(3))
+
+# ┬шчєрышчрЎш 
+plt.figure(figsize=(12, 8))
+sns.heatmap(failure_correlations, annot=True, cmap='RdYlBu_r', center=0,
+            square=True, linewidths=0.5, fmt='.3f', cbar_kws={'label': '╩юЁЁхы Ўш '})
+plt.title('╩юЁЁхы Ўшш ьхцфє ярЁрьхЄЁрьш ш Єшярьш юЄърчют',
+          fontsize=14, fontweight='bold')
+plt.xlabel('╥шя юЄърчр')
+plt.ylabel('╧рЁрьхЄЁ')
+plt.tight_layout()
+plt.show()
+
+# ═рїюфшь эршсюыхх ёшы№э√х ёт чш
+print("\n=== ═└╚┴╬╦┼┼ ╤╚╦▄═█┼ ╤┬▀╟╚ ===")
+for failure_type in failure_types:
+    max_corr_param = failure_correlations[failure_type].abs().idxmax()
+    max_corr_value = failure_correlations.loc[max_corr_param, failure_type]
+    print(f"{failure_type}: {max_corr_param} (ъюЁЁхы Ўш : {max_corr_value:.3f})")
+
+
+--- cell 61 markdown len 411 ---
+### ┬√тюф
+- `Torque [Nm]` ёшы№эхх тёхую ёт чрэ ё юЄърчрьш OSF ш HDF: ЁюёЄ ъЁєЄ ∙хую ьюьхэЄр яют√°рхЄ Ёшёъ яхЁхуЁхтр ш яхЁхуЁєчъш.
+- ╚чэюё шэёЄЁєьхэЄр (`Tool wear [min]`) Ч уыртэ√щ шэфшърЄюЁ TWF: ўхь фюы№°х ЁрсюЄрхЄ шэёЄЁєьхэЄ, Єхь т√°х тхЁю ЄэюёЄ№ юЄърчр.
+- ╤эшцхэшх ёъюЁюёЄш тЁр∙хэш  ёт чрэю ё HDF/OSF, р ыюъры№э√щ ЁюёЄ ёъюЁюёЄш їрЁръЄхЁхэ фы  PWF: Ёрчэ√х ёЎхэрЁшш ¤ъёяыєрЄрЎшш ЇюЁьшЁє■Є Ёрчэ√х яЁюЇшыш Ёшёър.
+
+
+--- cell 62 markdown len 34 ---
+## ╚Єюуют√х т√тюф√ ш ЁхъюьхэфрЎшш
+
+
+--- cell 63 code len 1858 ---
+# ╚Єюуютр  ётюфър рэрышчр
+print("=" * 60)
+print("╚╥╬├╬┬└▀ ╤┬╬─╩└ └═└╦╚╟└ ─└══█╒ ╬┴ ╬╥╩└╟└╒ ╬┴╬╨╙─╬┬└═╚▀")
+print("=" * 60)
+
+print("\n1. ╬┴┘└▀ ╤╥└╥╚╤╥╚╩└:")
+print(f"   - ┬ёхую чряшёхщ: {len(df):,}")
+print(f"   - ┬ёхую юЄърчют: {df['Machine failure'].sum():,} ({df['Machine failure'].mean():.2%})")
+print(f"   - ─єсышърЄют: {df.duplicated().sum()}")
+print(f"   - ╧Ёюяє∙хээ√ї чэрўхэшщ: {df.isnull().sum().sum()}")
+
+print("\n2. ╨└╤╧╨┼─┼╦┼═╚┼ ╬╥╩└╟╬┬ ╧╬ ╥╚╧└╠:")
+failure_counts = df[df['Machine failure'] == 1][['TWF', 'HDF', 'PWF', 'OSF', 'RNF']].sum().sort_values(ascending=False)
+for failure_type, count in failure_counts.items():
+    pct = (count / df['Machine failure'].sum()) * 100
+    print(f"   - {failure_type}: {count} ёыєўрхт ({pct:.1f}%)")
+
+print("\n3. ╩╦▐╫┼┬█┼ ╘└╩╥╬╨█ ╨╚╤╩└ (яю ъюЁЁхы Ўшш):")
+# ┬√ўшёы хь ъюЁЁхы Ўшш чрэютю
+numeric_df = df.select_dtypes(include=[np.number])
+corr_matrix = numeric_df.corr()
+top_factors = corr_matrix['Machine failure'].abs().sort_values(ascending=False)[1:6]
+for param, corr in top_factors.items():
+    print(f"   - {param}: {corr:.3f}")
+
+print("\n4. ╩╨╚╥╚╫┼╤╩╚┼ ╧└╨└╠┼╥╨█ ╧╨╚ ╬╥╩└╟└╒:")
+failure_data = df[df['Machine failure'] == 1]
+normal_data = df[df['Machine failure'] == 0]
+for param in ['Torque [Nm]', 'Tool wear [min]']:
+    diff = failure_data[param].median() - normal_data[param].median()
+    diff_pct = (diff / normal_data[param].median()) * 100
+    print(f"   - {param}: +{diff:.1f} ({diff_pct:+.1f}%) яЁш юЄърчрї")
+
+print("\n5. ╨┼╩╬╠┼═─└╓╚╚ ─╦▀ ╠╬─┼╦╚╨╬┬└═╚▀:")
+print("   - ╚ёяюы№чютрЄ№ яЁшчэръш: Torque, Tool wear, HDF, OSF, PWF, TWF")
+print("   - ╙ўхёЄ№ Єшя юсюЁєфютрэш  (L, M, H) ъръ ърЄхуюЁшры№э√щ яЁшчэръ")
+print("   - ═юЁьрышчютрЄ№ ўшёыют√х яЁшчэръш")
+print("   - ╙фрышЄ№ шыш юсЁрсюЄрЄ№ рэюьры№э√х чряшёш (315 ёыєўрхт)")
+print("   - ╙ўхёЄ№ фшёсрырэё ъырёёют (1.57% юЄърчют)")
+
+print("\n" + "=" * 60)
+
+
+--- cell 64 markdown len 445 ---
+- ╤шы№эюх тыш эшх ыюушўхёъшї Їыруют юЄърчют яюфЄтхЁцфрхЄ, ўЄю ьюфхы№ фюыцэр єьхЄ№ ЁрёяючэртрЄ№ ъюьсшэрЎшш `HDF/OSF/PWF/TWF`, р эх Єюы№ъю юс∙є■ ьхЄъє.
+- ╫шёыют√х ярЁрьхЄЁ√ `Torque` ш `Tool wear` юёЄр■Єё  ъы■ўхт√ьш: шї ьюэшЄюЁшэу ьюцхЄ ёыєцшЄ№ Ёрээшь ёшуэрыюь фы  яЁюЇшыръЄшъш.
+- ═єыхт√х яЁюяєёъш ш юЄёєЄёЄтшх фєсышърЄют єяЁю∙р■Є яюфуюЄютъє, эю фшёсрырэё ъырёёют ш 315 яЁюЄштюЁхўшт√ї ёЄЁюъ ЄЁхсє■Є ёяхЎшры№эющ юсЁрсюЄъш яхЁхф юсєўхэшхь ьюфхыхщ.
+-
+
+
+--- cell 65 code len 21 ---
+print ('hello world')
+

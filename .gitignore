@@ -19,12 +19,11 @@ artifacts/*
 !artifacts/.gitkeep
 !artifacts/example_metrics.json
 
+artifacts/mlflow.db
+artifacts/mlartifacts/
+artifacts/mlruns/
 mlruns/
 mlflow.db
-artifacts/mlflow.db
 artifacts/smoke_test/
 catboost_info/
-
-_assignment_extracted.txt
-_fe.txt
-_cells_tail.txt
+reference-material/catboost-training-logs/

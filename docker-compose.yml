@@ -16,14 +16,16 @@ services:
       - train
 
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.9.2
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
     ports:
       - "5000:5000"
     volumes:
-      - ./artifacts/mlruns:/mlflow/mlruns
+      - ./artifacts:/app/artifacts
     command: >
       mlflow server
       --host 0.0.0.0
       --port 5000
-      --backend-store-uri /mlflow/mlruns
-      --default-artifact-root /mlflow/mlruns
+      --backend-store-uri sqlite:////app/artifacts/mlflow.db
+      --default-artifact-root /app/artifacts/mlartifacts

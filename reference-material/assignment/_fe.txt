@@ -1,0 +1,91 @@
+CELL 20
+df["Power [kW]"] = df["Torque [Nm]"] * df["Rotational speed [rpm]"] / 9550
+df.sample(15)
+---
+CELL 22
+df["air_mass"] = 14.4 * df["Power [kW]"]
+df.sample(15)
+---
+CELL 24
+df["air_heat_power [kW]"] = df["air_mass"] * 1.005 * df["delta_temperature [K]"] / 60
+df.sample(15)
+---
+CELL 26
+df["efficiency [%]"] = (df["Power [kW]"] / (df["air_heat_power [kW]"] + df["Power [kW]"])) * 100
+df.sample(15)
+---
+CELL 28
+# 1. ╧Ёштюфшь Їыруш юЄърчют ъ Ўхыюьє Єшяє (хёыш х∙╕ эх Єръ)
+df[['TWF', 'HDF', 'PWF', 'OSF', 'RNF']] = \
+    df[['TWF', 'HDF', 'PWF', 'OSF', 'RNF']].fillna(0).astype(int)
+
+# 2. ╤юЁЄшЁєхь: ёэрўрыр яю (Type, Product ID), чрЄхь яю Tool wear [min]
+df = df.sort_values(['Type', 'Product ID', 'Tool wear [min]'])
+
+# 3. ╤ўшЄрхь ёєььє юЄърчют яю тёхь Єшярь фы  ърцфющ ёЄЁюъш
+df['failures_sum'] = df['TWF'] + df['HDF'] + df['PWF'] + df['OSF'] + df['RNF']
+
+# 4. ═ръюяшЄхы№эр  ёєььр тэєЄЁш уЁєяя√ (Type + Product ID)
+df['total_failures_cum'] = \
+    df.groupby(['Type', 'Product ID'])['failures_sum'].cumsum()
+
+# 5. ╙фры хь тЁхьхээ√щ ёЄюысхЎ (хёыш эх эєцхэ фы  рэрышчр)
+df = df.drop(columns=['failures_sum'])
+
+df.sample(150)
+---
+CELL 52
+# └эрышч юЄърчют яю Єшярь юсюЁєфютрэш 
+print("=== └═└╦╚╟ ╬╥╩└╟╬┬ ╧╬ ╥╚╧└╠ ╬┴╬╨╙─╬┬└═╚▀ ===\n")
+
+for equipment_type in df['Type'].unique():
+    type_data = df[df['Type'] == equipment_type]
+    total = len(type_data)
+    failures = type_data['Machine failure'].sum()
+    failure_rate = (failures / total) * 100
+
+    print(f"╥шя {equipment_type}:")
+    print(f"  ┬ёхую чряшёхщ: {total:,}")
+    print(f"  ╬Єърчют: {failures:,}")
+    print(f"  ╧ЁюЎхэЄ юЄърчют: {failure_rate:.2f}%")
+    print()
+
+# ┬шчєрышчрЎш 
+fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+
+# 1. ╨рёяЁхфхыхэшх юЄърчют яю Єшярь
+failure_by_type = df.groupby('Type')['Machine failure'].agg(['sum', 'count'])
+failure_by_type['rate'] = (failure_by_type['sum'] / failure_by_type['count']) * 100
+
+axes[0].bar(failure_by_type.index, failure_by_type['sum'],
+            color=['lightblue', 'lightgreen', 'lightcoral'],
+            edgecolor='black', alpha=0.8)
+axes[0].set_title('╩юышўхёЄтю юЄърчют яю Єшярь юсюЁєфютрэш ',
+                  fontsize=14, fontweight='bold')
+axes[0].set_xlabel('╥шя юсюЁєфютрэш ')
+axes[0].set_ylabel('╩юышўхёЄтю юЄърчют')
+axes[0].grid(True, alpha=0.3, axis='y')
+
+# ─юсрты хь яюфяшёш
+for i, (idx, row) in enumerate(failure_by_type.iterrows()):
+    axes[0].text(i, row['sum'] + 10, f"{int(row['sum'])}",
+                 ha='center', va='bottom', fontweight='bold')
+
+# 2. ╧ЁюЎхэЄ юЄърчют яю Єшярь
+axes[1].bar(failure_by_type.index, failure_by_type['rate'],
+            color=['lightblue', 'lightgreen', 'lightcoral'],
+            edgecolor='black', alpha=0.8)
+axes[1].set_title('╧ЁюЎхэЄ юЄърчют яю Єшярь юсюЁєфютрэш ',
+                  fontsize=14, fontweight='bold')
+axes[1].set_xlabel('╥шя юсюЁєфютрэш ')
+axes[1].set_ylabel('╧ЁюЎхэЄ юЄърчют (%)')
+axes[1].grid(True, alpha=0.3, axis='y')
+
+# ─юсрты хь яюфяшёш
+for i, (idx, row) in enumerate(failure_by_type.iterrows()):
+    axes[1].text(i, row['rate'] + 0.05, f"{row['rate']:.2f}%",
+                 ha='center', va='bottom', fontweight='bold')
+
+plt.tight_layout()
+
+---

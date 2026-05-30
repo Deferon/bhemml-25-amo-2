@@ -16,7 +16,7 @@
 - планировать обслуживание по риску, а не по календарю;
 - выдавать рекомендации по КПД и износу инструмента.
 
-Исходный аналитический кейс: репозиторий [keis7-main](keis7-main) (ноутбуки `case7.ipynb`, CatBoost в `special_versions/`).
+Исходный аналитический кейс: [reference-material/keis7-research](reference-material/keis7-research) (ноутбуки `case7.ipynb`, CatBoost в `special_versions/`). Данные для пайплайна: `keis7-main/train.csv`, `keis7-main/test.csv`.
 
 ---
 
@@ -54,7 +54,7 @@ flowchart LR
 | Этап | Модуль | Описание |
 |------|--------|----------|
 | **Extract** | `src/etl/load.py` | Загрузка CSV, проверка схемы и пропусков |
-| **Transform** | `src/etl/features.py` | Инженерные признаки из `case7.ipynb`, удаление противоречивых строк (`Machine failure=0` при активных флагах отказа) |
+| **Transform** | `src/etl/features.py` | Инженерные признаки из `reference-material/keis7-research/case7.ipynb`, удаление противоречивых строк (`Machine failure=0` при активных флагах отказа) |
 | **Load** | `src/train.py` | Обучение CatBoost, сохранение модели и метрик в `artifacts/` |
 
 **Ключевые преобразования:**
@@ -92,7 +92,7 @@ flowchart LR
 | F1 | ~0.52 |
 | Время обучения | ~13 с |
 
-Ориентир из исходного проекта: [`keis7-main/model_metadata.json`](keis7-main/model_metadata.json).
+Ориентир из исходного проекта: [`reference-material/keis7-research/model_metadata.json`](reference-material/keis7-research/model_metadata.json).
 
 **Графики:** `artifacts/plots/` — confusion matrix, ROC, feature importance.
 
@@ -198,14 +198,25 @@ git push -u origin main
 
 ### Качество модели (MLflow)
 
-- URI: `sqlite:///artifacts/mlflow.db`  
-- Логируются: параметры CatBoost, ROC-AUC, Precision, Recall, F1, время обучения  
-- Артефакты: модель, графики, `data_quality.json`  
+Единый backend для обучения и UI:
 
-Просмотр (после `docker compose up mlflow` или локально):
+- **Метаданные:** `artifacts/mlflow.db` (SQLite)  
+- **Артефакты runs:** `artifacts/mlartifacts/`  
+- **Эксперимент:** `machine_failure_prediction`  
+
+Логируются: параметры CatBoost, ROC-AUC, Precision, Recall, F1, время обучения, графики, модель.
+
+Просмотр UI:
 
 ```bash
-mlflow ui --backend-store-uri sqlite:///artifacts/mlflow.db
+# локально (Windows)
+.\scripts\start-mlflow.ps1
+
+# или вручную
+mlflow ui --backend-store-uri sqlite:///D:/Study/bhemml-25-amo-2/artifacts/mlflow.db --default-artifact-root D:/Study/bhemml-25-amo-2/artifacts/mlartifacts
+
+# Docker (тот же backend)
+docker compose up mlflow   # http://localhost:5000
 ```
 
 ### Качество данных и дрейф
@@ -235,11 +246,13 @@ python -m src.predict
 
 ```
 bhemml-25-amo-2/
-├── src/           # пайплайн
-├── tests/         # pytest
-├── keis7-main/    # исходные данные и ноутбуки
-├── artifacts/     # модель, метрики, предсказания
-├── docs/          # презентация
+├── src/                 # пайплайн
+├── tests/               # pytest
+├── keis7-main/          # train.csv, test.csv
+├── reference-material/  # ноутбуки, задание, исследования (не в пайплайне)
+├── artifacts/           # модель, метрики, предсказания
+├── docs/                # презентация
+├── scripts/             # локальный запуск
 ├── Dockerfile
 ├── docker-compose.yml
 └── .github/workflows/ci.yml
