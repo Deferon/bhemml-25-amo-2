@@ -1,10 +1,12 @@
-# Фамилия Имя — Прогноз отказов оборудования (keis7)
+# Участник 1, Участник 2, Участник 3, Участник 4 — Прогноз отказов оборудования (keis7)
 
-Итоговый проект по дисциплине **«Автоматизация машинного обучения»** (Нетология).  
+**Групповой проект · команда из 4 человек**  
+Дисциплина: **«Автоматизация машинного обучения»** (Нетология).  
 Автоматизированный ML-пайплайн для бинарной классификации отказов промышленного оборудования на датасете [Kaggle Playground Series S3E17](https://www.kaggle.com/competitions/playground-series-s3e17).
 
-> **Ссылка на GitHub:** https://github.com/Deferon/bhemml-25-amo-2  
-> Доступ преподавателю: добавьте collaborator `@ElenaSmyslovskikh`.
+> **GitHub (основной):** https://github.com/Deferon/bhemml-25-amo-2  
+> **GitHub (команда):** https://github.com/svscrip/auto_ML-prediction_machines_failures/tree/Yanshin  
+> **Доступ преподавателю:** добавьте collaborator `@ElenaSmyslovskikh`.
 
 ---
 
@@ -80,87 +82,7 @@ flowchart LR
 
 ---
 
-## 5. Аналитика и результаты
-
-### 5.1. Исходные данные
-
-| Параметр | Значение |
-|----------|----------|
-| Источник | [Kaggle Playground Series S3E17](https://www.kaggle.com/competitions/playground-series-s3e17) |
-| Train | ~136 429 записей (`keis7-main/train.csv`) |
-| Test | ~90 954 записей (`keis7-main/test.csv`) |
-| Целевая переменная | `Machine failure` (бинарная) |
-| Доля отказов (train) | **~1,6–1,8%** (сильный дисбаланс классов) |
-| Типы оборудования | **L** (low), **M** (medium), **H** (high) |
-
-**Сырые признаки:** `Air temperature [K]`, `Process temperature [K]`, `Rotational speed [rpm]`, `Torque [Nm]`, `Tool wear [min]`, `Type`, флаги отказов **TWF, HDF, PWF, OSF, RNF**.
-
-**Инженерные признаки (пайплайн):** `delta_temperature [K]`, `Power [kW]`, `air_mass`, `air_heat_power [kW]`, `efficiency [%]`, `total_failures_cum`.
-
----
-
-### 5.2. EDA — разведочный анализ (keis7)
-
-Исходное исследование: [`reference-material/keis7-research/`](reference-material/keis7-research/) (ноутбуки `case7.ipynb`, `keis7_explorer.ipynb`, отчёт [`analysis_results_20251206_154833/`](reference-material/keis7-research/analysis_results_20251206_154833/)).
-
-**Общая статистика по train (06.12.2025, 136 429 записей):**
-
-| Показатель | Значение |
-|------------|----------|
-| Средний КПД системы | **55,82%** (диапазон 50–78%) |
-| Средний износ инструмента | **104,4 мин** (0–253 мин) |
-| Перепад температуры | **10,08 K** (3,2–15,0 K) |
-| Всего отказов | **4 239** |
-| Доля измерений с отказом | **1,8%** |
-
-**Ключевые выводы EDA:**
-
-- Сильная **отрицательная корреляция** между КПД и износом инструмента → регулярная замена инструмента поддерживает эффективность.
-- Отказы чаще при износе **~1,2× выше среднего**.
-- Наиболее частый тип события — `Machine failure`.
-- Флаги TWF/HDF/PWF/OSF **сильно связаны** с целевой переменной (учтено в модели; для production рекомендуется отдельная модель без них).
-
-**Рекомендации из EDA:**
-
-- Оповещение при КПД **< 80%**.
-- Плановая замена инструмента каждые **~200 мин** работы.
-- Мониторинг температурного режима (оптимальный перепад **15–25 K**).
-- Усиленная диагностика при износе **> 150 мин**.
-- Переход к **предиктивному обслуживанию** на исторических данных.
-
-**Графики EDA:**
-
-| Распределение отказов | КПД vs износ | Тренд КПД |
-|-----------------------|--------------|-----------|
-| ![Распределение отказов](reference-material/keis7-research/analysis_results_20251206_154833/failure_distribution.png) | ![КПД vs износ](reference-material/keis7-research/analysis_results_20251206_154833/efficiency_vs_wear_scatter.png) | ![Тренд КПД](reference-material/keis7-research/analysis_results_20251206_154833/trend_efficiency_vs_wear.png) |
-
----
-
-### 5.3. Качество данных после ETL
-
-Отчёт: [`artifacts/data_quality.json`](artifacts/data_quality.json) (последний smoke-прогон, 4 987 строк после очистки).
-
-| Показатель | Значение |
-|------------|----------|
-| Пропуски | **0** по всем колонкам |
-| Доля `Machine failure` | **1,38%** |
-| Type L / M / H | 3 493 / 1 137 / 357 |
-
-**Средние значения числовых признаков (train, после feature engineering):**
-
-| Признак | Mean | Std |
-|---------|------|-----|
-| Air temperature [K] | 299,85 | 1,85 |
-| Process temperature [K] | 309,92 | 1,38 |
-| Rotational speed [rpm] | 1 520,8 | 140,9 |
-| Torque [Nm] | 40,41 | 8,49 |
-| Tool wear [min] | 105,08 | 64,26 |
-
-**Test-выборка (инференс):** 90 954 строк, пропусков нет; распределение Type — L: 63 438, M: 21 535, H: 5 981 ([`artifacts/inference_monitoring.json`](artifacts/inference_monitoring.json)).
-
----
-
-### 5.4. Метрики модели CatBoost
+## 5. Метрики модели
 
 Алгоритм: **CatBoostClassifier**, stratified hold-out **80/20**, `auto_class_weights=Balanced`, early stopping по **AUC**.
 
@@ -186,9 +108,7 @@ flowchart LR
 | Precision | 0,364 | 0,012 |
 | F1 | 0,501 | 0,013 |
 
----
-
-### 5.5. Важность признаков (Top-5)
+**Важность признаков (Top-5):**
 
 | Признак | Importance |
 |---------|------------|
@@ -198,65 +118,17 @@ flowchart LR
 | air_mass | 9,97 |
 | Tool wear [min] | 9,87 |
 
-![Важность признаков](docs/images/feature_importance.png)
-
 ---
 
-### 5.6. Результаты инференса
+## 6. Визуализации
 
-Файл: [`artifacts/predictions.csv`](artifacts/predictions.csv) — **90 954** прогноза.
+### EDA (разведочный анализ keis7)
 
-**Распределение риска** (`risk_level` по квантилям вероятности):
+| Распределение отказов | КПД vs износ | Тренд КПД |
+|-----------------------|--------------|-----------|
+| ![Распределение отказов](reference-material/keis7-research/analysis_results_20251206_154833/failure_distribution.png) | ![КПД vs износ](reference-material/keis7-research/analysis_results_20251206_154833/efficiency_vs_wear_scatter.png) | ![Тренд КПД](reference-material/keis7-research/analysis_results_20251206_154833/trend_efficiency_vs_wear.png) |
 
-| Уровень риска | Количество | Доля |
-|---------------|------------|------|
-| Низкий | 45 477 | ~50% |
-| Средний | 36 381 | ~40% |
-| **Высокий** | **9 096** | **~10%** |
-
-**Вероятность отказа (`failure_probability`):**
-
-| Статистика | Значение |
-|------------|----------|
-| Среднее | 0,182 |
-| 90-й перцентиль | 0,412 |
-| Максимум | 0,981 |
-
----
-
-### 5.7. Рекомендации по обслуживанию
-
-Автоматически сформированы в [`artifacts/maintenance_recommendations.csv`](artifacts/maintenance_recommendations.csv):
-
-| Проблема | Решение | Приоритет |
-|----------|---------|-----------|
-| Низкая эффективность системы | Настроить систему при КПД < 50% | Высокий |
-| Критический износ инструмента | Плановые замены при износе > **192 мин** | Высокий |
-| Высокий прогноз отказа | Целевое обслуживание оборудования с `risk_level=Высокий` | Высокий |
-
----
-
-### 5.8. Мониторинг дрейфа (train → test)
-
-Отчёт: [`artifacts/inference_monitoring.json`](artifacts/inference_monitoring.json).
-
-**Population Stability Index (PSI)** — все признаки стабильны (PSI **< 0,001**):
-
-| Признак | Сдвиг среднего | PSI |
-|---------|----------------|-----|
-| Air temperature [K] | −0,003 | 0,00013 |
-| Process temperature [K] | −0,001 | 0,00007 |
-| Rotational speed [rpm] | +0,186 | 0,00010 |
-| Torque [Nm] | −0,010 | 0,00016 |
-| Tool wear [min] | −0,120 | 0,00018 |
-
-Вывод: **существенного дрейфа данных между train и test не выявлено**.
-
----
-
-### 5.9. Графики и отчёты
-
-**Модель CatBoost (пайплайн):**
+### Модель CatBoost (пайплайн)
 
 | Confusion Matrix | ROC Curve | Feature Importance |
 |------------------|-----------|-------------------|
@@ -264,30 +136,97 @@ flowchart LR
 
 > Актуальные версии после каждого обучения также сохраняются в `artifacts/plots/` и MLflow UI.
 
-**Дополнительно:**
+---
 
-| Артефакт | Описание |
+## 7. Расширенная аналитика
+
+### 7.1. Исходные данные
+
+| Параметр | Значение |
 |----------|----------|
-| MLflow UI | Эксперимент `machine_failure_prediction`, runs с метриками и артефактами |
-| `reference-material/keis7-research/analysis_results_20251206_154833/analysis_summary.txt` | Текстовый отчёт EDA |
+| Источник | [Kaggle Playground Series S3E17](https://www.kaggle.com/competitions/playground-series-s3e17) |
+| Train | ~136 429 записей (`keis7-main/train.csv`) |
+| Test | ~90 954 записей (`keis7-main/test.csv`) |
+| Целевая переменная | `Machine failure` (бинарная) |
+| Доля отказов (train) | **~1,6–1,8%** (сильный дисбаланс классов) |
+| Типы оборудования | **L** (low), **M** (medium), **H** (high) |
+
+**Сырые признаки:** `Air temperature [K]`, `Process temperature [K]`, `Rotational speed [rpm]`, `Torque [Nm]`, `Tool wear [min]`, `Type`, флаги отказов **TWF, HDF, PWF, OSF, RNF**.
+
+**Инженерные признаки (пайплайн):** `delta_temperature [K]`, `Power [kW]`, `air_mass`, `air_heat_power [kW]`, `efficiency [%]`, `total_failures_cum`.
+
+### 7.2. EDA — ключевые выводы
+
+Исходное исследование: [`reference-material/keis7-research/`](reference-material/keis7-research/) (отчёт [`analysis_results_20251206_154833/`](reference-material/keis7-research/analysis_results_20251206_154833/)).
+
+| Показатель | Значение |
+|------------|----------|
+| Средний КПД системы | **55,82%** (диапазон 50–78%) |
+| Средний износ инструмента | **104,4 мин** |
+| Всего отказов | **4 239** (~1,8%) |
+
+- Сильная **отрицательная корреляция** между КПД и износом инструмента.
+- Отказы чаще при износе **~1,2× выше среднего**.
+- Рекомендации EDA: оповещение при КПД **< 80%**, замена инструмента **~200 мин**, диагностика при износе **> 150 мин**.
+
+### 7.3. Качество данных после ETL
+
+Отчёт: [`artifacts/data_quality.json`](artifacts/data_quality.json).
+
+| Показатель | Значение |
+|------------|----------|
+| Пропуски | **0** по всем колонкам |
+| Доля `Machine failure` | **1,38%** |
+| Type L / M / H | 3 493 / 1 137 / 357 |
+
+### 7.4. Результаты инференса
+
+Файл: [`artifacts/predictions.csv`](artifacts/predictions.csv) — **90 954** прогноза.
+
+| Уровень риска | Количество | Доля |
+|---------------|------------|------|
+| Низкий | 45 477 | ~50% |
+| Средний | 36 381 | ~40% |
+| **Высокий** | **9 096** | **~10%** |
+
+### 7.5. Рекомендации по обслуживанию
+
+[`artifacts/maintenance_recommendations.csv`](artifacts/maintenance_recommendations.csv):
+
+| Проблема | Решение | Приоритет |
+|----------|---------|-----------|
+| Низкая эффективность системы | Настроить систему при КПД < 50% | Высокий |
+| Критический износ инструмента | Плановые замены при износе > **192 мин** | Высокий |
+| Высокий прогноз отказа | Целевое обслуживание с `risk_level=Высокий` | Высокий |
+
+### 7.6. Дрейф данных (train → test)
+
+[`artifacts/inference_monitoring.json`](artifacts/inference_monitoring.json) — PSI **< 0,001** по всем признакам. Существенного дрейфа не выявлено.
 
 ---
 
-## 6. AutoML и автоматизация пайплайна
+## 8. AutoML и автоматизация пайплайна
 
-По ТЗ допускается автоматизация элементов архитектуры (не обязателен внешний AutoML-сервис).
+По ТЗ допускается использование готового AutoML-сервиса **или** автоматизация отдельных элементов архитектуры.
 
-Реализовано:
+### 8.1. Используемая ML-модель
+
+- **CatBoostClassifier** — кастомная модель (не внешний AutoML-сервис вроде H2O/Auto-sklearn).
+- Выбор обоснован: нативная работа с категориальными признаками (`Type`, флаги отказов), `auto_class_weights=Balanced` для дисбаланса классов, early stopping по AUC.
+- Гиперпараметры заданы в [`src/config.py`](src/config.py) (`CATBOOST_PARAMS`).
+
+### 8.2. Автоматизация элементов пайплайна
 
 1. **Единый конфиг** гиперпараметров CatBoost (`CATBOOST_PARAMS` в `config.py`).  
 2. **Скрипт обучения** `python -m src.train` с артефактами и MLflow.  
 3. **Скрипт инференса** `python -m src.predict` → `predictions.csv`, `maintenance_recommendations.csv`.  
 4. **CI smoke-тест** — автоматический прогон обучения на подвыборке в GitHub Actions.  
-5. **Docker** — воспроизводимый запуск train/predict в контейнере.
+5. **Docker** — воспроизводимый запуск train/predict в контейнере.  
+6. **MLflow** — единый tracking URI (`artifacts/mlflow.db` + `artifacts/mlartifacts/`).
 
 ---
 
-## 7. Тестирование (pytest)
+## 9. Тестирование (pytest)
 
 ```bash
 pip install -r requirements.txt
@@ -303,31 +242,32 @@ pytest -q -m slow          # полный smoke на 5000 строк
 
 ---
 
-## 8. Docker
+## 10. Docker
 
 ### Dockerfile (используемый образ и команды)
 
 ```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
+FROM python:3.11-slim          # базовый образ Python
+WORKDIR /app                   # рабочая директория
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*   # libgomp для CatBoost
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt   # зависимости
 COPY src/ ./src/
 COPY conftest.py pytest.ini ./
 COPY keis7-main/train.csv keis7-main/test.csv ./keis7-main/
 ENV PYTHONPATH=/app
+ENV MLFLOW_TRACKING_URI=sqlite:////app/artifacts/mlflow.db
 RUN mkdir -p /app/artifacts
 ENTRYPOINT ["python", "-m"]
-CMD ["src.train", "--smoke"]
+CMD ["src.train", "--smoke"]   # smoke-обучение по умолчанию
 ```
 
 ### Зачем контейнеризация
 
-- фиксированные версии библиотек (воспроизводимость);
-- изоляция от локального окружения;
-- единый способ запуска на CI/CD и сервере.
+- **Воспроизводимость** — фиксированные версии библиотек;
+- **Изоляция** — независимость от локального окружения;
+- **Безопасность и ресурсы** — единый способ запуска на CI/CD и сервере без изменения хост-системы.
 
 ### Команды
 
@@ -343,7 +283,7 @@ docker compose up mlflow   # UI на http://localhost:5000
 
 ---
 
-## 9. CI/CD
+## 11. CI/CD
 
 Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 
@@ -357,23 +297,35 @@ Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 
 ```bash
 git init
-git status
 git add .
 git commit -m "Initial MLOps pipeline for machine failure prediction"
 git branch -M main
-git remote add origin https://github.com/<user>/bhemml-25-amo-2.git
+
+git remote add origin https://github.com/Deferon/bhemml-25-amo-2.git
 git push -u origin main
+
+git remote add svscrip https://github.com/svscrip/auto_ML-prediction_machines_failures.git
+git push svscrip main:Yanshin
 ```
 
-Для обновлений: `git add`, `git commit`, `git push`, при необходимости `git pull`, `git branch`, `git checkout -b feature/...`.
+**Командная работа (ветки и pull request):**
+
+```bash
+git checkout -b feature/uchastnik-1-etl
+git add . && git commit -m "feat: ETL and feature engineering"
+git push -u origin feature/uchastnik-1-etl
+gh pr create --title "Участник 1: ETL" --base main
+
+git checkout main && git pull
+git checkout -b feature/uchastnik-2-train
+# ... аналогично для Участника 2, 3, 4
+```
 
 ---
 
-## 10. Мониторинг
+## 12. Мониторинг
 
 ### Качество модели (MLflow)
-
-Единый backend для обучения и UI:
 
 - **Метаданные:** `artifacts/mlflow.db` (SQLite)  
 - **Артефакты runs:** `artifacts/mlartifacts/`  
@@ -381,35 +333,80 @@ git push -u origin main
 
 Логируются: параметры CatBoost, ROC-AUC, Precision, Recall, F1, время обучения, графики, модель.
 
-Просмотр UI:
-
 ```bash
-# локально (Windows)
-.\scripts\start-mlflow.ps1
-
-# или вручную
-mlflow ui --backend-store-uri sqlite:///D:/Study/bhemml-25-amo-2/artifacts/mlflow.db --default-artifact-root D:/Study/bhemml-25-amo-2/artifacts/mlartifacts
-
-# Docker (тот же backend)
-docker compose up mlflow   # http://localhost:5000
+.\scripts\start-mlflow.ps1          # локально
+docker compose up mlflow            # http://localhost:5000
 ```
 
 ### Качество данных и дрейф
 
-Сводные цифры — в **разделе 5** выше. Файлы:
+| Файл | Назначение |
+|------|------------|
+| `artifacts/data_quality.json` | Статистики train, пропуски, распределение Type |
+| `artifacts/inference_monitoring.json` | PSI, сдвиг средних train→test |
+| `artifacts/maintenance_recommendations.csv` | Бизнес-рекомендации |
+| `artifacts/predictions.csv` | Прогнозы по каждой единице оборудования |
 
-- `artifacts/data_quality.json` — статистики train после ETL  
-- `artifacts/inference_monitoring.json` — PSI, сдвиг средних, качество test  
-- `artifacts/maintenance_recommendations.csv` — бизнес-рекомендации  
-- `artifacts/predictions.csv` — прогнозы по каждой единице оборудования  
+**PSI (Population Stability Index):** все признаки **< 0,001** — дрейф не выявлен (подробнее в §7.6).
 
-### Инфраструктура
+### Инфраструктура (CPU/RAM)
 
-Модуль `src/monitoring.py` фиксирует CPU/RAM (`psutil`) до и после обучения.
+Модуль [`src/monitoring.py`](src/monitoring.py) фиксирует загрузку через `psutil` до и после обучения ([`artifacts/data_quality.json`](artifacts/data_quality.json)):
+
+| Момент | CPU | RAM (использовано) |
+|--------|-----|---------------------|
+| До обучения | 18,1% | 54,3% (31,9 GB total) |
+| После обучения | 5,7% | 54,5% |
+
+Время обучения smoke-прогона: **~5,3 с** ([`artifacts/metrics.json`](artifacts/metrics.json)).
 
 ---
 
-## 11. Быстрый старт (локально)
+## 13. GitHub-репозиторий
+
+| Репозиторий | Назначение | Ссылка |
+|-------------|------------|--------|
+| Основной | Полный MLOps-пайплайн | https://github.com/Deferon/bhemml-25-amo-2 |
+| Командный | Ветка сдачи проекта | https://github.com/svscrip/auto_ML-prediction_machines_failures/tree/Yanshin |
+
+- Репозитории **публичные** (открытый доступ для проверки).
+- CI: GitHub Actions — pytest + Docker smoke train (см. §11).
+- Доступ преподавателю: `@ElenaSmyslovskikh`.
+
+---
+
+## 14. Презентация
+
+Структура слайдов (5–7): [`docs/presentation.md`](docs/presentation.md).
+
+---
+
+## 15. Участники и формат
+
+- **Формат:** групповой проект (**4 участника**, допустимо по ТЗ 2–4 человека)
+- **Преподаватель:** `@ElenaSmyslovskikh`
+
+| № | Участник | Зона ответственности |
+|---|----------|---------------------|
+| 1 | **Участник 1** | ETL, feature engineering, EDA (keis7) |
+| 2 | **Участник 2** | Обучение модели, MLflow, метрики |
+| 3 | **Участник 3** | Инференс, мониторинг, рекомендации по обслуживанию |
+| 4 | **Участник 4** | Docker, CI/CD, README, презентация |
+
+### Git workflow команды
+
+По ТЗ: каждый участник работает в **отдельной ветке**, изменения вливаются через **pull request**.
+
+| Участник | Пример ветки | Область |
+|----------|--------------|---------|
+| Участник 1 | `feature/uchastnik-1-etl` | `src/etl/`, `tests/test_features.py` |
+| Участник 2 | `feature/uchastnik-2-train` | `src/train.py`, MLflow |
+| Участник 3 | `feature/uchastnik-3-predict` | `src/predict.py`, `src/monitoring.py` |
+| Участник 4 | `feature/uchastnik-4-devops` | Docker, CI, README, docs |
+
+---
+
+## Приложение A. Быстрый старт (локально)
 
 ```bash
 python -m venv .venv
@@ -428,27 +425,14 @@ bhemml-25-amo-2/
 ├── src/                 # пайплайн
 ├── tests/               # pytest
 ├── keis7-main/          # train.csv, test.csv
-├── reference-material/  # ноутбуки, задание, исследования (не в пайплайне)
+├── reference-material/  # ноутбуки, задание, исследования
+├── docs/                # презентация, images/
 ├── artifacts/           # модель, метрики, предсказания
-├── docs/                # презентация
 ├── scripts/             # локальный запуск
 ├── Dockerfile
 ├── docker-compose.yml
 └── .github/workflows/ci.yml
 ```
-
----
-
-## 12. Презентация
-
-Структура слайдов (5–7): [`docs/presentation.md`](docs/presentation.md).
-
----
-
-## 13. Участники и формат
-
-- Формат: **индивидуальный** проект  
-- ФИО в названии: замените «Фамилия Имя» в заголовке README  
 
 ---
 
