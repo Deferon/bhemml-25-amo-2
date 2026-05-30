@@ -3,7 +3,7 @@
 Итоговый проект по дисциплине **«Автоматизация машинного обучения»** (Нетология).  
 Автоматизированный ML-пайплайн для бинарной классификации отказов промышленного оборудования на датасете [Kaggle Playground Series S3E17](https://www.kaggle.com/competitions/playground-series-s3e17).
 
-> **Ссылка на GitHub:** `https://github.com/<ваш-ник>/bhemml-25-amo-2` — замените после публикации репозитория.  
+> **Ссылка на GitHub:** https://github.com/Deferon/bhemml-25-amo-2  
 > Доступ преподавателю: добавьте collaborator `@ElenaSmyslovskikh`.
 
 ---
